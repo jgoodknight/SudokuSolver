@@ -9,7 +9,7 @@ import Queue
 import numpy as np
 
 DEBUG = False
-MAX_SOLUTION_ATTEMPTS = 2000
+MAX_SOLUTION_ATTEMPTS = 1000
 
 
 class SudokuGrid(object):
@@ -33,6 +33,8 @@ class SudokuGrid(object):
         else:
             #then we want a grid of zeros to be filled in later and there's no point in checking if we have a valid grid
             pass
+
+        self.my_string = None
 
     def test_validity_and_initialize_grid(self, grid_input):
         """
@@ -284,6 +286,7 @@ class SudokuGrid(object):
         self.my_grid[row_i, col_i] = new_number
         if ensure_safe_addition:
             assert(self.check_validity())
+        self.my_string = None
         return self
 
     #OPERATOR OVERLOADING
@@ -298,6 +301,8 @@ class SudokuGrid(object):
         return True
 
     def __str__(self):
+        if self.my_string is not None:
+            return self.my_string
         output = ""
         for row_i in range(self.grid_size):
 
@@ -307,6 +312,7 @@ class SudokuGrid(object):
                     raise IllFormedGridException("invalid number %i for grid size %i" %(dat, self.grid_size))
                 output = output + " " + str(dat)
             output = output + """\n"""
+        self.my_string = output
         return output
 
     def __hash__(self):
@@ -348,7 +354,7 @@ class SudokuGridSolver(object):
             if MAX_SOLUTION_ATTEMPTS <= grids_visited and DEBUG:
                 print("DUMPING MOST RECENT SOLUTION:")
                 print(str(working_copy_of_initial_SudokuGrid))
-                raise Exception()
+                raise Exception("Too many attempts to solve in debug mode")
             q_pop = search_q.get()
             working_copy_of_initial_SudokuGrid, possible_moves_index_to_set = q_pop
 

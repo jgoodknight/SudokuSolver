@@ -243,12 +243,14 @@ class test_SudokuGridSolver(unittest.TestCase):
         grid_hard_solved = grid1_solver.solve()
         self.assertTrue(grid_hard_solved.is_solved())
 
-    # def test_hexadoku(self):
-    #     "UNTESTED"
-    #     hexagrid = SudokuGrid(initial_grid = hexadoku_expert, grid_size = 16)
-    #     hex_grid_solver = SudokuGridSolver(hexagrid)
-    #     hex_grid_solution = hex_grid_solver.solve()
-    #     self.assertTrue(hex_grid_solution.solve())
+    def test_hexadoku(self):
+        print("Do you want to test solving a hexadoku?  It will take ~1.5 hours. Type 'yes' if so:")
+        answer = raw_input()
+        if answer == 'yes':
+            hexagrid = SudokuGrid(initial_grid = hexadoku_expert, grid_size = 16)
+            hex_grid_solver = SudokuGridSolver(hexagrid)
+            hex_grid_solution = hex_grid_solver.solve()
+            self.assertTrue(hex_grid_solution.is_solved())
 
 
 

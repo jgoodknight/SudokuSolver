@@ -65,16 +65,18 @@ if __name__ == '__main__':
     print("Solution to Puzzle: ")
     print(str(grid_hard_solved))
 
-    print("Try Hexadoku if you dare!")
+    print("Try Hexadoku if you dare! (this will take ~1.5 hours to complete)")
     hexagrid = SudokuGrid(initial_grid = hexadoku_expert, grid_size = 16)
     print("Grid to be solved:")
     print(str(hexagrid))
-    # UNTESTED
-    # print("...solving....")
-    # start_time = time.time()
-    # hex_grid_solver = SudokuGridSolver(hexagrid)
-    # hex_grid_solution = hex_grid_solver.solve()
-    # elapsed_time_s = time.time() - start_time
-    # print("time Elapsed %f seconds" % elapsed_time_s)
-    # print("Solution to Puzzle: ")
-    # print(str(hex_grid_solution))
+    print("Do you want to solve this? type 'yes' if so:")
+    answer = raw_input()
+    if answer == 'yes':
+        print("...solving....")
+        start_time = time.time()
+        hex_grid_solver = SudokuGridSolver(hexagrid)
+        hex_grid_solution = hex_grid_solver.solve()
+        elapsed_time_s = time.time() - start_time
+        print("time Elapsed %f seconds" % elapsed_time_s)
+        print("Solution to Puzzle: ")
+        print(str(hex_grid_solution))
