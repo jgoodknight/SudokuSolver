@@ -8,6 +8,9 @@ import Queue
 
 import numpy as np
 
+DEBUG = False
+MAX_SOLUTION_ATTEMPTS = 2000
+
 
 class SudokuGrid(object):
     """
@@ -94,7 +97,7 @@ class SudokuGrid(object):
 
                 #it's finally safe to add the number to the grid!
                 self.my_grid[row_i, col_i] = dat
-    def check_validity(self,):
+    def check_validity(self):
         """
         Checks the validity of the grid, possibly after a move or for a sanity check
 
@@ -342,7 +345,10 @@ class SudokuGridSolver(object):
         grids_visited = 0
         failed_grids = 0
         while not search_q.empty():
-
+            if MAX_SOLUTION_ATTEMPTS <= grids_visited and DEBUG:
+                print("DUMPING MOST RECENT SOLUTION:")
+                print(str(working_copy_of_initial_SudokuGrid))
+                raise Exception()
             q_pop = search_q.get()
             working_copy_of_initial_SudokuGrid, possible_moves_index_to_set = q_pop
 
@@ -374,7 +380,9 @@ class SudokuGridSolver(object):
                     # update with all possible trivial moves
                     self.__make_trivial_moves__(new_grid_copy, new_possible_moves_index_to_set)
                     #if the grid is solved, return the grid
-                    if new_grid_copy.is_solved():
+                    # if new_grid_copy.is_solved(): #THIS WAS INEFFICIENT, removed
+                    if len(new_possible_moves_index_to_set.keys()) == 0:
+                        assert(new_grid_copy.is_solved())
                         print("\nSolved with graph traversal!  Visited %i grids and experienced %i dead ends\n" % (grids_visited ,failed_grids))
                         return new_grid_copy
                 except UnsolveableSudokuGrid:
@@ -461,6 +469,7 @@ class SudokuGridSolver(object):
 
                 except KeyError:
                     pass
+
 
 class InvalidGridException(Exception):
     """
