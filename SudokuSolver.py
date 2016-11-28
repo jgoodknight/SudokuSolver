@@ -271,14 +271,16 @@ class SudokuGrid(object):
         return internal_row_index, internal_col_index
 
     def make_move(self, row_i, col_i, new_number, ensure_safe_addition=True):
-        output = copy.deepcopy(self)
-        assert(not output.check_invalid_entry_number(new_number) )
-        if output[row_i, col_i] != 0:
+        """
+        mutates this object, makes a move
+        """
+        assert(not self.check_invalid_entry_number(new_number) )
+        if self[row_i, col_i] != 0:
             raise InvalidMoveException("Space must be empty to make a move")
-        output.my_grid[row_i, col_i] = new_number
+        self.my_grid[row_i, col_i] = new_number
         if ensure_safe_addition:
-            assert(output.check_validity())
-        return output
+            assert(self.check_validity())
+        return self
 
     #OPERATOR OVERLOADING
     def __getitem__(self, row_col_tuple):
@@ -316,12 +318,19 @@ class SudokuGridSolver(object):
     def solve(self):
         possible_moves_index_to_set = self.initial_SudokuGrid.find_moves()
         working_copy_of_initial_SudokuGrid = copy.deepcopy(self.initial_SudokuGrid)
-        working_copy_of_initial_SudokuGrid = self.__make_trivial_moves__(working_copy_of_initial_SudokuGrid, possible_moves_index_to_set)
-        #find a grid point with the minimum number of possible moveset
+        moves_made = 1
+        while moves_made:
+            moves_made = self.__make_trivial_moves__(working_copy_of_initial_SudokuGrid, possible_moves_index_to_set)
+
 
         return working_copy_of_initial_SudokuGrid
 
     def __make_trivial_moves__(self, working_copy_of_initial_SudokuGrid, possible_moves_index_to_set):
+        """
+        Finds all moves in the possible moves set which have only one option
+        mutates the arguments passed to it
+        returns False if it makes no moves, or the number of moves
+        """
         # Go through and pick low-hanging fruit until none exists
         # Find squares for which there is only one possible moveset
         found_easy_move = True
@@ -335,36 +344,58 @@ class SudokuGridSolver(object):
                     raise UnsolveableSudokuGrid("space %i, %i has no possible moves!" % (row_i, col_i))
                 # one possible move means we can do something!
                 if len(possile_move_set) == 1:
-                    new_number = possile_move_set.pop()
-                    working_copy_of_initial_SudokuGrid = working_copy_of_initial_SudokuGrid.make_move(row_i, col_i, new_number, ensure_safe_addition=False)
-                    
-                    moves_made = moves_made + 1
-                    del possible_moves_index_to_set[(row_i, col_i)]
-                    # Check row, column and internal box membership
-                    for other_row_i, other_col_i in possible_moves_index_to_set.keys():
-                        if other_row_i == row_i:
-                            possible_moves_index_to_set[(other_row_i, other_col_i)].discard(new_number)
-                        if other_col_i == col_i:
-                            possible_moves_index_to_set[(other_row_i, other_col_i)].discard(new_number)
-
-                    # Check internal box membership
-                    internal_rows, internal_columns = working_copy_of_initial_SudokuGrid.get_internal_box_indeces(row_i, col_i)
-                    for other_row_i in internal_rows:
-                        for other_col_i in internal_columns:
-                            #see if this box has the offensive number as a possibility, remove if so
-                            try:
-                                possible_moves_index_to_set[(other_row_i, other_col_i)].discard(new_number)
-                            except KeyError:
-                                pass
-                    #mark that we found an easy move
+                    new_value = possile_move_set.pop()
+                    self.__make_move_update_dictionary__(working_copy_of_initial_SudokuGrid, possible_moves_index_to_set, (row_i, col_i), new_value)
                     found_easy_move = True
-                    break #restart the loop now that the possible moves are updated
-        print("SudokuSolver made %i trivial moves" % moves_made)
-        return working_copy_of_initial_SudokuGrid
+                    moves_made = moves_made + 1
+
+        # print("SudokuSolver made %i trivial moves" % moves_made)
+
+        return moves_made
 
 
+    def __make_move_update_dictionary__(self, working_copy_of_initial_SudokuGrid, possible_moves_index_to_set, move_coordinate, move_value):
+        """
+        Makes the move given to it, and may catch if the board is made invalid.  Not guaranteed
+        Mutates arguments given to it.
+        """
+        #make the actual move:
+        row_i, col_i = move_coordinate
+        working_copy_of_initial_SudokuGrid = working_copy_of_initial_SudokuGrid.make_move(row_i, col_i, move_value, ensure_safe_addition=False)
 
+        #remove the move from the dictionary of moves
+        del possible_moves_index_to_set[(row_i, col_i)]
 
+        # Check row, column and internal box membership
+        for other_row_i, other_col_i in possible_moves_index_to_set.keys():
+            if other_row_i == row_i:
+                possible_moves_index_to_set[(other_row_i, other_col_i)].discard(move_value)
+                #if the new set is emplty, raise error
+                new_moves_set = possible_moves_index_to_set[(other_row_i, other_col_i)]
+                if len(new_moves_set) == 0:
+                    raise UnsolveableSudokuGrid("impossible to fill coordinate %i, %i" % (other_row_i, other_col_i))
+
+            if other_col_i == col_i:
+                possible_moves_index_to_set[(other_row_i, other_col_i)].discard(move_value)
+                #if the new set is emplty, raise error
+                new_moves_set = possible_moves_index_to_set[(other_row_i, other_col_i)]
+                if len(new_moves_set) == 0:
+                    raise UnsolveableSudokuGrid("impossible to fill coordinate %i, %i" % (other_row_i, other_col_i))
+
+        # Check internal box membership
+        internal_rows, internal_columns = working_copy_of_initial_SudokuGrid.get_internal_box_indeces(row_i, col_i)
+        for other_row_i in internal_rows:
+            for other_col_i in internal_columns:
+                #see if this box has the offensive number as a possibility, remove if so
+                try:
+                    possible_moves_index_to_set[(other_row_i, other_col_i)].discard(move_value)
+                    #check if the set of moves is empty, raise error if so
+                    new_moves_set = possible_moves_index_to_set[(other_row_i, other_col_i)]
+                    if len(new_moves_set) == 0:
+                        raise UnsolveableSudokuGrid("impossible to fill coordinate %i, %i" % (other_row_i, other_col_i))
+
+                except KeyError:
+                    pass
 
 class InvalidGridException(Exception):
     """

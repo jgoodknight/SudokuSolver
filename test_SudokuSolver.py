@@ -172,20 +172,12 @@ class test_SudokuGridSolver(unittest.TestCase):
         # print(str(grid_easy_solved))
 
 
-    def test_solve_hard(self):
-        grid_hard = SudokuGrid(initial_grid = hard)
-        # print("hard before: \n")
-        # print(str(grid_hard))
-        grid1_solver = SudokuGridSolver(grid_hard)
-        grid_hard_solved = grid1_solver.solve()
-        # print("hard after: \n")
-        # print(str(grid_hard_solved))
 
     def test_solve_easy_1(self):
         grid_easy = SudokuGrid(initial_grid = test1_easy)
         grid_easy_solution = SudokuGrid(initial_grid = test1_easy_solution)
         self.assertTrue(grid_easy_solution.is_solved())
-        # print("tes1 before: \n")
+        # print("test1 before: \n")
         # print(str(grid_easy))
         grid_easy_solver = SudokuGridSolver(grid_easy)
         grid_easy_possibly_solved = grid_easy_solver.solve()
@@ -194,6 +186,11 @@ class test_SudokuGridSolver(unittest.TestCase):
         self.assertTrue(grid_easy_possibly_solved == grid_easy_solution)
         self.assertTrue(grid_easy_possibly_solved.is_solved())
 
+    def test_solve_hard(self):
+        grid_hard = SudokuGrid(initial_grid = hard)
+        grid1_solver = SudokuGridSolver(grid_hard)
+        grid_hard_solved = grid1_solver.solve()
+        self.assertTrue(grid_hard_solved.is_solved())
 
 
 if __name__ == '__main__':
