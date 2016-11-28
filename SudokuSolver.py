@@ -4,6 +4,7 @@
 import math
 import copy
 import random
+import Queue
 
 import numpy as np
 
@@ -316,20 +317,84 @@ class SudokuGridSolver(object):
         self.initial_SudokuGrid = SudokuGridInstance
 
     def solve(self):
+        """
+        First tries to make trivially possible moves, but failing that, performs a breadth-first graph-traversal of all possible moves
+
+        returns the solved SudokuGrid.  Raises an exception if the grid is unsolveable
+        """
+        #set up the initial data
         possible_moves_index_to_set = self.initial_SudokuGrid.find_moves()
         working_copy_of_initial_SudokuGrid = copy.deepcopy(self.initial_SudokuGrid)
-        moves_made = 1
-        while moves_made:
-            moves_made = self.__make_trivial_moves__(working_copy_of_initial_SudokuGrid, possible_moves_index_to_set)
+        #make all possible trivial moves
+        self.__make_trivial_moves__(working_copy_of_initial_SudokuGrid, possible_moves_index_to_set)
+        if working_copy_of_initial_SudokuGrid.is_solved():
+            return working_copy_of_initial_SudokuGrid
+
+        #otherwise we set up a BFS graph search algorithm to go through possible solutions
+        seen_grids_set = set([working_copy_of_initial_SudokuGrid])
+
+        # this queue will contain tuples:
+        # (SudokuGrid, possible_moves_index_to_set, )
+        search_q = Queue.Queue()
+        search_q.put((working_copy_of_initial_SudokuGrid, possible_moves_index_to_set))
 
 
-        return working_copy_of_initial_SudokuGrid
+        grids_visited = 0
+        failed_grids = 0
+        while not search_q.empty():
+
+            q_pop = search_q.get()
+            working_copy_of_initial_SudokuGrid, possible_moves_index_to_set = q_pop
+
+            # Find a coordinate with either 2 possible moves or the smallest possible number of moves
+            min_moveset_size = 2 * working_copy_of_initial_SudokuGrid.grid_size
+            for key in possible_moves_index_to_set.keys():
+                moveset = possible_moves_index_to_set[key]
+                num_moves = len(moveset)
+                if num_moves < min_moveset_size:
+                    min_moveset_size = num_moves
+                    move_coordinates_to_make = key
+                    # the minimum number here is two so if we find it, exit out and stop searching
+                    if num_moves == 2:
+                        break
+
+            #get all possible moves to be made at that point
+            possible_move_numbers = possible_moves_index_to_set[move_coordinates_to_make]
+
+            #for every possible move
+            for possible_number in possible_move_numbers:
+                grids_visited = grids_visited + 1
+                #copy the grid and moves dictionary
+                new_grid_copy = copy.deepcopy(working_copy_of_initial_SudokuGrid)
+                new_possible_moves_index_to_set = copy.deepcopy(possible_moves_index_to_set)
+                #try to make the move and then all possible trivial moves
+                try:
+                    # make the possible move
+                    self.__make_move_update_dictionary__(new_grid_copy, new_possible_moves_index_to_set, move_coordinates_to_make, possible_number)
+                    # update with all possible trivial moves
+                    self.__make_trivial_moves__(new_grid_copy, new_possible_moves_index_to_set)
+                    #if the grid is solved, return the grid
+                    if new_grid_copy.is_solved():
+                        print("\nSolved with graph traversal!  Visited %i grids and experienced %i dead ends\n" % (grids_visited ,failed_grids))
+                        return new_grid_copy
+                except UnsolveableSudokuGrid:
+                    failed_grids = failed_grids + 1
+                    continue
+
+                if new_grid_copy not in seen_grids_set:
+                    search_q.put((new_grid_copy, new_possible_moves_index_to_set))
+                    seen_grids_set.add(new_grid_copy)
+                else:
+                    continue
+
+        raise UnsolveableSudokuGrid("SudokuGridSolver determined the grid is unsolveable as given")
 
     def __make_trivial_moves__(self, working_copy_of_initial_SudokuGrid, possible_moves_index_to_set):
         """
         Finds all moves in the possible moves set which have only one option
-        mutates the arguments passed to it
-        returns False if it makes no moves, or the number of moves
+        mutates the arguments passed to it.  After it makes a move it looks again for a move to do and continues this process until there are no more possible elementary moves left
+
+        returns the number of moves made
         """
         # Go through and pick low-hanging fruit until none exists
         # Find squares for which there is only one possible moveset

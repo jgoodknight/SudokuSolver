@@ -80,6 +80,19 @@ test1_easy_solution = [[1, 7, 4, 9, 2, 8, 3, 6, 5],
                     [8, 3, 2, 1, 7, 9, 4, 5, 6],
                     [9, 4, 7, 6, 3, 5, 1, 8, 2],
                     [5, 1, 6, 2, 8, 4, 9, 3, 7]]
+
+really_hard = [
+            [0,1,0,0,0,8,0,0,9],
+            [0,0,4,0,0,0,0,6,0],
+            [9,0,6,0,7,0,0,0,0],
+            [1,0,2,4,6,9,0,0,8],
+            [0,0,0,8,0,5,0,0,0],
+            [5,0,0,7,1,3,6,0,2],
+            [0,0,0,0,8,0,1,0,7],
+            [0,2,0,0,0,0,5,0,0],
+            [4,0,0,1,0,0,0,2,0]]
+
+
 class test_SudokuGrid(unittest.TestCase):
 
     def test_initializer(self):
@@ -191,6 +204,13 @@ class test_SudokuGridSolver(unittest.TestCase):
         grid1_solver = SudokuGridSolver(grid_hard)
         grid_hard_solved = grid1_solver.solve()
         self.assertTrue(grid_hard_solved.is_solved())
+
+    def test_solve_really_hard(self):
+        grid_hard = SudokuGrid(initial_grid = really_hard)
+        grid1_solver = SudokuGridSolver(grid_hard)
+        grid_hard_solved = grid1_solver.solve()
+        self.assertTrue(grid_hard_solved.is_solved())
+
 
 
 if __name__ == '__main__':
